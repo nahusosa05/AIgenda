@@ -1,0 +1,19 @@
+# Entorno virtual
+.venv/
+venv/
+
+# Archivos de configuración sensibles
+.env
+
+# Compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor (VS Code, PyCharm, etc.)
+.vscode/
+.idea/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

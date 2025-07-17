@@ -1,0 +1,6 @@
+python-telegram-bot
+cohere
+notion-client
+python-dotenv
+langchain
+langchain_cohere
