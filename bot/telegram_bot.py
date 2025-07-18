@@ -15,8 +15,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    resultado_json = get_event(text)
-    await update.message.reply_text(f"Esto entendí del mensaje:\n{resultado_json}")
+    json_response = get_event(text)
+    mensaje = (
+        f"🗓 Evento: {json_response['evento']}\n"
+        f"📅 Fecha: {json_response['fecha']}\n"
+        f"⏰ Hora: {json_response['hora']}"
+    )
+    
+    await update.message.reply_text(mensaje)
     
 def start_bot():
     # construyo la app
