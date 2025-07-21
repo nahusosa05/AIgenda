@@ -1,22 +1,21 @@
 from config.settings import COHERE_TOKEN
-import cohere, datetime, json
+from config.constants import EVENT_FORMAT_PROMPT
+import cohere, datetime, json, dateparser
 
 co = cohere.Client(COHERE_TOKEN)
 
 def get_event(userinput: str):
-    prompt = f"""
-    Extraé el evento, la fecha y la hora del siguiente mensaje. Respondé solamente en formato JSON, con los siguientes campos:
-    - "evento": qué hay que hacer.
-    - "fecha": en formato DD/MM (día/mes).
-    - "hora": en formato HH:MM (hora:minuto). Si no se menciona la hora, poné "Sin hora".
+    today = datetime.datetime.today()
+    today_str = today.strftime("%d/%m/%Y")
 
-    Si la fecha está escrita en forma relativa (por ejemplo "este domingo", "mañana", "el viernes que viene"), calculá la fecha correspondiente basándote en el día de hoy.
-
-    Hoy es {datetime.date.today().strftime('%A %d/%m')}. Usá esa fecha para calcular los días relativos.
-
-    Mensaje: "{userinput}"
-    Respuesta:
-    """
+    prompt = EVENT_FORMAT_PROMPT.format(
+        today=today_str,
+        userinput=userinput,
+    )
+    print(f"[Hoy es] {today_str}")
+    
+    # Posible error en fechas: "domingo que viene" da una fecha 1 día después, verlo mas adelante
+    # De momento uso el formato '(fecha relativa o no),(evento)' el mensaje de telegram.
     try:
         response = co.generate(
             model="command-r-plus",
@@ -24,10 +23,26 @@ def get_event(userinput: str):
             max_tokens=100,
             temperature=0.3
         )
+        
         text = response.generations[0].text.strip()
+        print("Prompt enviado:", prompt)
+        print("Respuesta bruta:", text)
+
         json_response = json.loads(text)
+
+        fecha_raw = json_response.get("fecha", "")
+        fecha_parseada = dateparser.parse(
+            fecha_raw,
+            settings={'RELATIVE_BASE': today}
+        )
+
+        if fecha_parseada:
+            json_response["fecha"] = fecha_parseada.strftime("%d/%m")
+        else:
+            json_response["fecha"] = "??/??"
+
         return json_response
-    
+
     except json.JSONDecodeError:
         return {
             "evento": "Formato no reconocido",
