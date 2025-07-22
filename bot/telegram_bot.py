@@ -3,6 +3,7 @@ from config.constants import FECHA_ERROR
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from cohere_integration.cohere_utils import get_event
+from notion_integration.notion_integration import create_event_notion
 
 # Programación asíncrona
 # async -> método asincrónico: pausa su ejecución para esperar mientras realiza tareas que toman tiempo
@@ -53,11 +54,20 @@ async def event_register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(FECHA_ERROR)
     else:
         event = json_response['evento']
-        mensaje = (
-            f"🗓 Evento: {event.title()}\n"
-            f"📅 Fecha: {json_response['fecha']}\n"
-            f"⏰ Hora: {json_response['hora']}"
-        )
+        date = json_response['fecha']
+        hour = json_response['hora']
+        
+        success = create_event_notion(event, date, hour)
+        if success:
+            mensaje = (
+                f"✅ Evento agendado en Notion:\n"
+                f"🗓 {event.title()}\n"
+                f"📅 {date}\n"
+                f"⏰ {hour}"
+            )
+        else:
+            mensaje = "❌ Ocurrió un error al agendar el evento en Notion."
+        
         await update.message.reply_text(mensaje)
 
     # Resetear estado y volver al menú
